@@ -3095,6 +3095,71 @@ public final class ChatMessageInteractiveMediaNode: ASDisplayNode, GalleryItemTr
             }
         }
         
+                // 在已有状态徽标逻辑之后统一覆盖普通视频徽标。
+        // 不累加 alternativeRepresentations：它们是其他分辨率/质量版本。
+        if !isSecretMedia {
+            var badgeMedia = self.media?._asMedia()
+
+            // 发票媒体：取完整媒体。
+            if let invoice = badgeMedia as? TelegramMediaInvoice,
+               let extendedMedia = invoice.extendedMedia,
+               case let .full(fullMedia) = extendedMedia {
+                badgeMedia = fullMedia
+            }
+
+            // 付费媒体：取当前显示的完整媒体。
+            if let paidContent = badgeMedia as? TelegramMediaPaidContent {
+                let index = self.mediaIndex ?? 0
+                if index < paidContent.extendedMedia.count,
+                   case let .full(fullMedia) = paidContent.extendedMedia[index] {
+                    badgeMedia = fullMedia
+                }
+            }
+
+            // 故事媒体：取当前故事实际选中的媒体。
+            if let storyMedia = badgeMedia as? TelegramMediaStory,
+               let storedItem = message.associatedStories[storyMedia.storyId]?.get(Stories.StoredItem.self),
+               case let .item(item) = storedItem,
+               let selectedMedia = selectStoryMedia(
+                    item: item,
+                    preferredHighQuality: self.preferredStoryHighQuality
+               )?._asMedia() {
+                badgeMedia = selectedMedia
+            }
+
+            if let file = badgeMedia as? TelegramMediaFile,
+               file.isVideo,
+               !file.isVideoSticker,
+               let duration = file.duration {
+                let durationText = stringForDuration(Int32(floor(duration)), position: nil)
+
+                let formatting = DataSizeStringFormatting(
+                    strings: strings,
+                    decimalSeparator: decimalSeparator
+                )
+
+                let sizeText: String
+                if let size = file.size, size > 0, size != .max {
+                    sizeText = dataSizeString(
+                        size,
+                        forceDecimal: true,
+                        formatting: formatting
+                    )
+                } else {
+                    // 文件大小元数据缺失时无法显示真实大小。
+                    sizeText = "—"
+                }
+
+                badgeContent = .text(
+                    inset: 0.0,
+                    backgroundColor: messageTheme.mediaDateAndStatusFillColor,
+                    foregroundColor: messageTheme.mediaDateAndStatusTextColor,
+                    text: NSAttributedString(string: "\(durationText) · \(sizeText)"),
+                    iconName: nil
+                )
+            }
+        }
+        
         if let statusNode = self.statusNode {
             var removeStatusNode = false
             if statusNode.state != .none && state == .none {
