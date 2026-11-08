@@ -3154,7 +3154,7 @@ public final class ChatMessageInteractiveMediaNode: ASDisplayNode, GalleryItemTr
                     inset: 0.0,
                     backgroundColor: messageTheme.mediaDateAndStatusFillColor,
                     foregroundColor: messageTheme.mediaDateAndStatusTextColor,
-                    text: NSAttributedString(string: "\(durationText) · \(sizeText)"),
+                    text: NSAttributedString(string: " \(durationText)•\(sizeText)"),
                     iconName: nil
                 )
             }
