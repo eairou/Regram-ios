@@ -2000,7 +2000,8 @@ public final class ChatMessageInteractiveMediaNode: ASDisplayNode, GalleryItemTr
                         } else if let file = media as? TelegramMediaFile {
                             if NativeVideoContent.isHLSVideo(file: file), let minimizedQuality = HLSVideoContent.minimizedHLSQuality(file: .standalone(media: file), codecConfiguration: HLSCodecConfiguration(context: context)) {
                                 let postbox = context.account.postbox
-
+                                
+                                /*
                                 let playlistStatusSignal = context.engine.resources.status(resource: EngineMediaResource(minimizedQuality.playlist.media.resource))
                                 |> map { status -> EngineMediaResourceStatus in
                                     switch status {
@@ -2082,6 +2083,7 @@ public final class ChatMessageInteractiveMediaNode: ASDisplayNode, GalleryItemTr
                                         }
                                     }
                                 }
+                                */
                                 
                                 //mycode到底下else
                                 let originalFileStatusSignal = messageMediaFileStatus(
