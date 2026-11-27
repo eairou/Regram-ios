@@ -2005,8 +2005,10 @@ private let hlsOriginalDownloadRequested = ValuePromise<Bool>(false, ignoreRepea
                                     case .Fetching, .Paused:
                                         return .Fetching(isActive: true, progress: 0.0)
                                     case .Local:
+                                    logFetchStatus("case Local1")
                                         return .Local
                                     case .Remote:
+                                    logFetchStatus("case Remotel1")
                                         return .Remote(progress: 0.0)
                                     }
                                 }
@@ -2023,14 +2025,17 @@ private let hlsOriginalDownloadRequested = ValuePromise<Bool>(false, ignoreRepea
                                     case .Fetching, .Paused:
                                         return .single((.Fetching(isActive: true, progress: 0.0), nil))
                                     case .Remote:
+                                    logFetchStatus("case Remotel2")
                                         return .single((.Remote(progress: 0.0), nil))
                                     case .Local:
+                                    logFetchStatus("case Local2")
                                         break
                                     }
 
                                     return HLSVideoContent.minimizedHLSQualityPreloadData(postbox: postbox, file: .message(message: MessageReference(message), media: file), userLocation: .peer(message.id.peerId), prefixSeconds: 10, autofetchPlaylist: true, codecConfiguration: HLSCodecConfiguration(context: context))
                                     |> mapToSignal { preloadData -> Signal<(EngineMediaResourceStatus, EngineMediaResourceStatus?), NoError> in
                                         guard let preloadData else {
+                                        logFetchStatus("预加载_不完整")
                                             return .single((.Local, nil))
                                         }
 
@@ -2053,11 +2058,14 @@ private let hlsOriginalDownloadRequested = ValuePromise<Bool>(false, ignoreRepea
                                                     totalLoaded += range.upperBound - range.lowerBound
                                                 }
                                                 let preloadLength = preloadData.1.upperBound - preloadData.1.lowerBound
+                                                
                                                 if totalLoaded >= preloadLength {
+                                                logFetchStatus("已预加载_10s")
                                                     return (.Local, nil)
                                                 } else if isFetching {
                                                     return (.Fetching(isActive: true, progress: Float(totalLoaded) / Float(preloadLength)), nil)
                                                 } else {
+                                                logFetchStatus("预加载兜底的else")
                                                     return (.Remote(progress: 0.0), nil)
                                                 }
                                             }
