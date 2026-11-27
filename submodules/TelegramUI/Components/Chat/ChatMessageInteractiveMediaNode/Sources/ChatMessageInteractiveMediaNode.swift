@@ -524,7 +524,7 @@ public final class ChatMessageInteractiveMediaNode: ASDisplayNode, GalleryItemTr
     private let coverFetchDisposable = MetaDisposable()
     
     //mycode
-private let hlsOriginalDownloadRequested = ValuePromise<Bool>(false, ignoreRepeated: true)
+//private let hlsOriginalDownloadRequested = ValuePromise<Bool>(false, ignoreRepeated: true)
     
     private let videoNodeReadyDisposable = MetaDisposable()
     // MARK: Regram — page-scoped admission and gallery/first-frame handoff.
@@ -1897,9 +1897,11 @@ private let hlsOriginalDownloadRequested = ValuePromise<Bool>(false, ignoreRepea
         if NativeVideoContent.isHLSVideo(file: originalFile) {
             // 手动点击徽章时下载原始文件，而不是播放用的低质量/预加载资源。
             fetchFile = originalFile
+            /*
             if manual {
                 strongSelf.hlsOriginalDownloadRequested.set(true)
             }
+            */
         } else {
             fetchFile = file
         }
@@ -2035,8 +2037,10 @@ private let hlsOriginalDownloadRequested = ValuePromise<Bool>(false, ignoreRepea
                                     return HLSVideoContent.minimizedHLSQualityPreloadData(postbox: postbox, file: .message(message: MessageReference(message), media: file), userLocation: .peer(message.id.peerId), prefixSeconds: 10, autofetchPlaylist: true, codecConfiguration: HLSCodecConfiguration(context: context))
                                     |> mapToSignal { preloadData -> Signal<(EngineMediaResourceStatus, EngineMediaResourceStatus?), NoError> in
                                         guard let preloadData else {
-                                        logFetchStatus("预加载_不完整")
-                                            return .single((.Local, nil))
+                                            logFetchStatus("预加载文件_不存在")
+                                            //return .single((.Local, nil))
+                                            //无预加载 不能标记为local完整文件
+                                            return .single((.Remote(progress: 0.0), nil))
                                         }
 
                                         return context.engine.resources.status(resource: EngineMediaResource(preloadData.0.media.resource))
@@ -2058,14 +2062,20 @@ private let hlsOriginalDownloadRequested = ValuePromise<Bool>(false, ignoreRepea
                                                     totalLoaded += range.upperBound - range.lowerBound
                                                 }
                                                 let preloadLength = preloadData.1.upperBound - preloadData.1.lowerBound
-                                                
+                                                guard preloadLength > 0 else {
+                                                    //空的预加载文件 不能标记为完整local
+                                                    logFetchStatus("预加载文件为空")
+                                                    return (.Remote(progress: 0.0), nil)
+                                                }
                                                 if totalLoaded >= preloadLength {
-                                                logFetchStatus("已预加载_10s")
-                                                    return (.Local, nil)
+                                                    logFetchStatus("已预加载_10s")
+                                                    //return (.Local, nil)
+                                                    //10s预加载完成 但不是完整视频 所以不能标记为local
+                                                    return (.Remote(progress: 0.0), nil)
                                                 } else if isFetching {
                                                     return (.Fetching(isActive: true, progress: Float(totalLoaded) / Float(preloadLength)), nil)
                                                 } else {
-                                                logFetchStatus("预加载兜底的else")
+                                                    logFetchStatus("预加载兜底的else")
                                                     return (.Remote(progress: 0.0), nil)
                                                 }
                                             }
@@ -2078,11 +2088,14 @@ private let hlsOriginalDownloadRequested = ValuePromise<Bool>(false, ignoreRepea
     context: context,
     messageId: message.id,
     file: file,
-    adjustForVideoThumbnail: true
+    //adjustForVideoThumbnail: true
+    //缩略图状态也可能被标记为local完整文件？
+    adjustForVideoThumbnail: false
 )
 |> map { resourceStatus -> (EngineMediaResourceStatus, EngineMediaResourceStatus?) in
     return (resourceStatus, nil)
 }
+updatedStatusSignal = originalFileStatusSignal
 
 let useOriginalFileStatusSignal = self?.hlsOriginalDownloadRequested.get() ?? .single(false)
 
