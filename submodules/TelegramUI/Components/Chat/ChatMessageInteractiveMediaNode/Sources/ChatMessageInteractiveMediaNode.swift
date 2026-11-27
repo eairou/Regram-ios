@@ -2096,7 +2096,7 @@ public final class ChatMessageInteractiveMediaNode: ASDisplayNode, GalleryItemTr
     return (resourceStatus, nil)
 }
 updatedStatusSignal = originalFileStatusSignal
-
+/*
 let useOriginalFileStatusSignal = self?.hlsOriginalDownloadRequested.get() ?? .single(false)
 
 updatedStatusSignal = useOriginalFileStatusSignal
@@ -2108,7 +2108,7 @@ updatedStatusSignal = useOriginalFileStatusSignal
         return hlsPreloadStatusSignal
     }
 }
-
+*/
 
                             } else {
                                 updatedStatusSignal = combineLatest(messageMediaFileStatus(context: context, messageId: message.id, file: file, adjustForVideoThumbnail: true), context.account.pendingMessageManager.pendingMessageStatus(message.id) |> map { $0.0 })
