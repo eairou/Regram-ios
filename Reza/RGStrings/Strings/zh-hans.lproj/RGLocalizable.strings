@@ -325,6 +325,7 @@
 "Settings.DefaultVideoQuality.automatic" = "自动";
 "Settings.DefaultVideoQuality.highest" = "最高可用画质";
 "Settings.DefaultVideoQuality.lowest" = "最低可用画质";
+"Settings.DefaultVideoQuality.original" = "原画";
 
 // MARK: Regram — Telegram 13 appearance controls.
 "Settings.Tabs.Width" = "底栏宽度";
