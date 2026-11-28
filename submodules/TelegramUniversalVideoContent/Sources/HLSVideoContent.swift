@@ -241,7 +241,7 @@ public final class HLSVideoContent: UniversalVideoContent {
         self.placeholderColor = placeholderColor
         self.storeAfterDownload = storeAfterDownload
     }
-    
+    /*
     public func makeContentNode(context: AccountContext, postbox: Postbox, audioSession: ManagedAudioSession) -> UniversalVideoContentNode & ASDisplayNode {
         guard let qualities = HLSVideoNativeContentNode.qualityFiles(file: self.fileReference, codecConfiguration: self.codecConfiguration) else {
             // Nothing to play adaptively: play the base file rather than nothing.
@@ -251,6 +251,82 @@ public final class HLSVideoContent: UniversalVideoContent {
         let thumbnail = internalMediaGridMessageVideo(postbox: postbox, userLocation: self.userLocation, videoReference: thumbnailVideoReference, previewSourceFileReference: self.fileReference, imageReference: nil, onlyFullSize: self.onlyFullSizeThumbnail, useLargeThumbnail: self.useLargeThumbnail, autoFetchFullSizeThumbnail: self.autoFetchFullSizeThumbnail || self.fileReference.media.isInstantVideo)
         return HLSVideoNativeContentNode(context: context, audioSessionManager: audioSession, userLocation: self.userLocation, fileReference: self.fileReference, levels: qualities.levels, qualityFiles: qualities.files, loopVideo: self.loopVideo, enableSound: self.enableSound, baseRate: self.baseRate, captureProtected: self.captureProtected, startTimestamp: self.startTimestamp, thumbnail: thumbnail)
     }
+    */
+    
+    public func makeContentNode(
+    context: AccountContext,
+    postbox: Postbox,
+    audioSession: ManagedAudioSession
+) -> UniversalVideoContentNode & ASDisplayNode {
+    let preference = RGVideoQualityPreference(
+        rawValue: RGSimpleSettings.shared.defaultVideoQuality
+    ) ?? .automatic
+
+    if preference == .original {
+        // 使用主文件的原始 resource，不进入 HLS playlist / qualityFiles 播放路径。
+        let nativeContent = NativeVideoContent(
+            id: self.nativeId,
+            userLocation: self.userLocation,
+            fileReference: self.fileReference,
+            streamVideo: .conservative,
+            loopVideo: self.loopVideo,
+            enableSound: self.enableSound,
+            baseRate: self.baseRate,
+            fetchAutomatically: self.fetchAutomatically,
+            onlyFullSizeThumbnail: self.onlyFullSizeThumbnail,
+            useLargeThumbnail: self.useLargeThumbnail,
+            autoFetchFullSizeThumbnail: self.autoFetchFullSizeThumbnail,
+            startTimestamp: self.startTimestamp,
+            continuePlayingWithoutSoundOnLostAudioSession: self.continuePlayingWithoutSoundOnLostAudioSession,
+            placeholderColor: self.placeholderColor,
+            captureProtected: self.captureProtected,
+            storeAfterDownload: self.storeAfterDownload
+        )
+
+        return nativeContent.makeContentNode(
+            context: context,
+            postbox: postbox,
+            audioSession: audioSession
+        )
+    }
+
+    // 以下保持现有 HLS 自适应画质播放逻辑
+    guard let qualities = HLSVideoNativeContentNode.qualityFiles(
+        file: self.fileReference,
+        codecConfiguration: self.codecConfiguration
+    ) else {
+        let nativeContent = NativeVideoContent(
+            id: self.nativeId,
+            userLocation: self.userLocation,
+            fileReference: self.fileReference,
+            streamVideo: .conservative,
+            loopVideo: self.loopVideo,
+            enableSound: self.enableSound,
+            baseRate: self.baseRate,
+            fetchAutomatically: self.fetchAutomatically,
+            onlyFullSizeThumbnail: self.onlyFullSizeThumbnail,
+            useLargeThumbnail: self.useLargeThumbnail,
+            autoFetchFullSizeThumbnail: self.autoFetchFullSizeThumbnail,
+            startTimestamp: self.startTimestamp,
+            continuePlayingWithoutSoundOnLostAudioSession: self.continuePlayingWithoutSoundOnLostAudioSession,
+            placeholderColor: self.placeholderColor,
+            captureProtected: self.captureProtected,
+            storeAfterDownload: self.storeAfterDownload
+        )
+
+        return nativeContent.makeContentNode(
+            context: context,
+            postbox: postbox,
+            audioSession: audioSession
+        )
+    }
+
+    // 原有 thumbnail 和 HLSVideoNativeContentNode 创建代码继续保留
+    let thumbnailVideoReference = HLSVideoContent.minimizedHLSQuality(file: self.fileReference, codecConfiguration: self.codecConfiguration)?.file ?? self.fileReference
+        let thumbnail = internalMediaGridMessageVideo(postbox: postbox, userLocation: self.userLocation, videoReference: thumbnailVideoReference, previewSourceFileReference: self.fileReference, imageReference: nil, onlyFullSize: self.onlyFullSizeThumbnail, useLargeThumbnail: self.useLargeThumbnail, autoFetchFullSizeThumbnail: self.autoFetchFullSizeThumbnail || self.fileReference.media.isInstantVideo)
+        return HLSVideoNativeContentNode(context: context, audioSessionManager: audioSession, userLocation: self.userLocation, fileReference: self.fileReference, levels: qualities.levels, qualityFiles: qualities.files, loopVideo: self.loopVideo, enableSound: self.enableSound, baseRate: self.baseRate, captureProtected: self.captureProtected, startTimestamp: self.startTimestamp, thumbnail: thumbnail)
+}
+
     
     public func isEqual(to other: UniversalVideoContent) -> Bool {
         if let other = other as? NativeVideoContent {
