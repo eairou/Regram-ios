@@ -423,6 +423,11 @@ public final class UniversalVideoNode: ASDisplayNode {
             if forceAutomatic { node.setVideoQuality(.auto) }
             return
         }
+        if preference == .original {
+    // 原画由 HLSVideoContent 创建 NativeVideoContent 播放器处理，
+    // 不是 HLS 的 quality(Int) 档位。
+    return
+}
         self.rgGlobalQualityDisposable.set((node.videoQualityStateSignal()
         |> deliverOnMainQueue
         |> filter { ($0?.available.count ?? 0) > 1 }
