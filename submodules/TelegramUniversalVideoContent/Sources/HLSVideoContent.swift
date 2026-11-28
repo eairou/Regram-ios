@@ -11,6 +11,7 @@ import TelegramAudio
 import AccountContext
 import PhotoResources
 import HLSPlayback
+import RGSimpleSettings
 
 public struct HLSCodecConfiguration {
     public var isHardwareAv1Supported: Bool
